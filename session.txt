@@ -1,0 +1,30 @@
+Script started on Mon 05 Oct 2020 03:23:58 PM MDT
+$ make
+ifort -g -qopenmp -qopenmp-offload=host -c tbp.F90
+ifort -g -qopenmp -qopenmp-offload=host -c tbp_submod.F90
+ifort -g -qopenmp -qopenmp-offload=host -o tbp.exe tbp.o tbp_submod.o
+$ ./tbp.exe
+  0.200000002980232     
+ 
+   DONE  
+ 
+forrtl: severe (174): SIGSEGV, segmentation fault occurred
+Image              PC                Routine            Line        Source             
+tbp.exe            0000000000405CDA  Unknown               Unknown  Unknown
+libpthread-2.17.s  00002B909422D5D0  Unknown               Unknown  Unknown
+libiomp5.so        00002B9093F5737D  Unknown               Unknown  Unknown
+libiomp5.so        00002B9093F50C65  Unknown               Unknown  Unknown
+libiomp5.so        00002B9093F50A9F  Unknown               Unknown  Unknown
+libiomp5.so        00002B9093ED2EB9  Unknown               Unknown  Unknown
+ld-2.17.so         00002B9093901FE8  Unknown               Unknown  Unknown
+libc-2.17.so       00002B9094473B69  Unknown               Unknown  Unknown
+libc-2.17.so       00002B9094473BB7  Unknown               Unknown  Unknown
+tbp.exe            000000000040E9C8  Unknown               Unknown  Unknown
+tbp.exe            0000000000404916  Unknown               Unknown  Unknown
+tbp.exe            00000000004039A2  Unknown               Unknown  Unknown
+libc-2.17.so       00002B909445C3D5  __libc_start_main     Unknown  Unknown
+tbp.exe            00000000004038A9  Unknown               Unknown  Unknown
+$ exit
+exit
+
+Script done on Mon 05 Oct 2020 03:24:09 PM MDT
