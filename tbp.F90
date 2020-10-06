@@ -7,7 +7,7 @@ module mod_domain
     double precision,dimension(LEBLK,64,6) :: rhs
     type(elemblk_t), pointer :: elemblk
     contains
-      procedure :: part2 => compute_diffusion_part2
+      procedure, NOPASS :: part2 => compute_diffusion_part2
   end type diffusion_t
   type elemblk_t
     integer :: esblk
@@ -22,7 +22,7 @@ module mod_domain
   end type domain_t
   interface
     module subroutine compute_diffusion_part2( this, es_task, ee_task )
-      class (diffusion_t), target, intent(inout)    :: this
+      type (diffusion_t), target, intent(inout)     :: this
       integer,                     intent(in)       :: es_task, ee_task
     end subroutine compute_diffusion_part2
   end interface
@@ -53,7 +53,7 @@ program tbp
 !$omp target if(.true.)
   do ib = 1, NEBLK
     do ie = 1, LEBLK
-      call model%domain%grid%elemblk(ib)%diffusion%part2(ie,ie)
+      call model%domain%grid%elemblk(ib)%diffusion%part2(model%domain%grid%elemblk(ib)%diffusion,ie,ie)
     enddo
   enddo
 !$omp end target
