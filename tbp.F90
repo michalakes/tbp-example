@@ -1,7 +1,10 @@
+#define NEBLK 10
+#define LEBLK 32
+
 module mod_domain
   implicit none
   type diffusion_t
-    double precision,allocatable,dimension(:,:,:) :: rhs
+    double precision,dimension(LEBLK,64,6) :: rhs
     type(elemblk_t), pointer :: elemblk
     contains
       procedure :: part2 => compute_diffusion_part2
@@ -12,7 +15,7 @@ module mod_domain
   end type elemblk_t
   type grid_t
     integer :: grid_id   ! identifier for this grid, global domain is grid 1
-    type(elemblk_t), allocatable   :: elemblk(:)
+    type(elemblk_t)    :: elemblk(NEBLK)
   end type grid_t
   type domain_t
     type( grid_t ) :: grid
@@ -37,19 +40,19 @@ program tbp
   use mod_neptune_model
   implicit none
   type (neptune_t), target   :: model
-  integer, parameter         :: leblk = 32
-  integer, parameter         :: neblk = 10
+!  integer, parameter         :: leblk = 32
+!  integer, parameter         :: neblk = 10
   integer                    :: ie,ib
-  allocate(model%domain%grid%elemblk(neblk))
-  do ib = 1, neblk
-    model%domain%grid%elemblk(ib)%esblk = (ib-1)*leblk+1
+!  allocate(model%domain%grid%elemblk(neblk))
+  do ib = 1, NEBLK
+    model%domain%grid%elemblk(ib)%esblk = (ib-1)*LEBLK+1
     model%domain%grid%elemblk(ib)%diffusion%elemblk => model%domain%grid%elemblk(ib)
-    allocate(model%domain%grid%elemblk(ib)%diffusion%rhs(leblk,64,6))
-    model%domain%grid%elemblk(ib)%diffusion%rhs(leblk,64,6) = 0.
+!    allocate(model%domain%grid%elemblk(ib)%diffusion%rhs(LEBLK,64,6))
+    model%domain%grid%elemblk(ib)%diffusion%rhs(1:LEBLK,64,6) = 0.
   enddo
 !$omp target if(.true.)
-  do ib = 1, neblk
-    do ie = 1, leblk
+  do ib = 1, NEBLK
+    do ie = 1, LEBLK
       call model%domain%grid%elemblk(ib)%diffusion%part2(ie,ie)
     enddo
   enddo
