@@ -1,30 +1,55 @@
-Script started on Mon 05 Oct 2020 03:23:58 PM MDT
-$ make
-ifort -g -qopenmp -qopenmp-offload=host -c tbp.F90
-ifort -g -qopenmp -qopenmp-offload=host -c tbp_submod.F90
-ifort -g -qopenmp -qopenmp-offload=host -o tbp.exe tbp.o tbp_submod.o
-$ ./tbp.exe
-  0.200000002980232     
- 
-   DONE  
- 
-forrtl: severe (174): SIGSEGV, segmentation fault occurred
-Image              PC                Routine            Line        Source             
-tbp.exe            0000000000405CDA  Unknown               Unknown  Unknown
-libpthread-2.17.s  00002B909422D5D0  Unknown               Unknown  Unknown
-libiomp5.so        00002B9093F5737D  Unknown               Unknown  Unknown
-libiomp5.so        00002B9093F50C65  Unknown               Unknown  Unknown
-libiomp5.so        00002B9093F50A9F  Unknown               Unknown  Unknown
-libiomp5.so        00002B9093ED2EB9  Unknown               Unknown  Unknown
-ld-2.17.so         00002B9093901FE8  Unknown               Unknown  Unknown
-libc-2.17.so       00002B9094473B69  Unknown               Unknown  Unknown
-libc-2.17.so       00002B9094473BB7  Unknown               Unknown  Unknown
-tbp.exe            000000000040E9C8  Unknown               Unknown  Unknown
-tbp.exe            0000000000404916  Unknown               Unknown  Unknown
-tbp.exe            00000000004039A2  Unknown               Unknown  Unknown
-libc-2.17.so       00002B909445C3D5  __libc_start_main     Unknown  Unknown
-tbp.exe            00000000004038A9  Unknown               Unknown  Unknown
-$ exit
+Script started on Wed Nov 11 14:04:05 2020
+[michalak@login5.summit ~/tbp-example]$ cat xxx.F90
+#define NEBLK 10
+#define LEBLK 32
+
+program tbp
+  implicit none
+  logical, external :: omp_is_initial_device 
+!$omp target if(.true.)
+  write(0,*)omp_is_initial_device()
+!$omp end target
+  stop
+end program tbp
+[michalak@login5.summit ~/tbp-example]$ xlf2008_r -qsmp=omp -qoffload -qtgtarch=auto  -qcuda  -Wx,-nvvm-compile-options=-opt=0 -o xxx.exe xxx.F90
+** tbp   === End of Compilation 1 ===
+1501-510  Compilation successful for file xxx.F90.
+
+VERS1.3: final close failed: Input/output error
+[michalak@login5.summit ~/tbp-example]$ 
+[michalak@login5.summit ~/tbp-example]$ xlf2008_r -qsmp=omp -qoffload -qtgtarch=auto -qcuda -Wx,-nvvm-compile-options=-opt=0 -o xxx.exe xxx.F90
+** tbp   === End of Compilation 1 ===
+1501-510  Compilation successful for file xxx.F90.
+[michalak@login5.summit ~/tbp-example]$ cat xxx.lsf
+#!/bin/bash
+# Begin LSF Directives
+#BSUB -P CSC454
+#BSUB -W 0:10
+#BSUB -nnodes 1
+#BSUB -alloc_flags gpumps
+#BSUB -J jmtest
+#BSUB -o jmtest.%J
+#BSUB -e jmtest.%J
+
+cd /ccs/home/michalak/tbp-example
+date
+
+jsrun -n1 -a1 -g1 ./xxx.exe >& runlog 
+
+echo done
+
+[michalak@login5.summit ~/tbp-example]$ bsub xxx.lsf
+Job <474215> is submitted to default queue <batch>.
+[michalak@login5.summit ~/tbp-example]$ bjobs
+JOBID   USER       STAT   SLOTS    QUEUE       START_TIME    FINISH_TIME   JOB_NAME                      
+474215  michalak   PEND      -     batch             -             -       jmtest                        
+[michalak@login5.summit ~/tbp-example]$ bjobs
+No unfinished job found
+[michalak@login5.summit ~/tbp-example]$ cat runlog
+ F
+STOP
+(INEXACT)
+[michalak@login5.summit ~/tbp-example]$ exit
 exit
 
-Script done on Mon 05 Oct 2020 03:24:09 PM MDT
+Script done on Wed Nov 11 14:26:23 2020

@@ -1,5 +1,7 @@
 FC = ifort -g -qopenmp -qopenmp-offload=host
 FC = xlf2008_r -qsmp=omp -qoffload -Wx,-nvvm-compile-options=-opt=0
+FC = xlf_r -qsmp=omp -qoffload -qtgtarch=auto  -qcuda  -Wx,-nvvm-compile-options=-opt=0
+FC = xlf2008_r -qsmp=omp -qoffload -qtgtarch=auto  -qcuda  -Wx,-nvvm-compile-options=-opt=0
 
 all : tbp.exe
 

@@ -18,11 +18,11 @@ module mod_domain
     type(elemblk_t)    :: elemblk(NEBLK)
   end type grid_t
   type domain_t
-    type( grid_t ) :: grid
+    type( grid_t ) :: grid(1)
   end type domain_t
   interface
     module subroutine compute_diffusion_part2( this, es_task, ee_task )
-      type (diffusion_t), target, intent(inout)     :: this
+      class (diffusion_t), target, intent(inout)    :: this
       integer,                     intent(in)       :: es_task, ee_task
     end subroutine compute_diffusion_part2
   end interface
@@ -36,28 +36,59 @@ module mod_neptune_model
   end type neptune_t
 end module mod_neptune_model
 
+module mod_diffusion_driver
+  implicit none
+  contains
+    subroutine diffusion_driver( d )
+      use mod_domain, only : domain_t
+      implicit none
+!!$omp declare target
+      type(domain_t), target, intent(inout) :: d
+      integer                    :: ie,ib
+      logical, external :: omp_is_initial_device 
+!$omp target if(.true.)
+!$omp teams distribute parallel do private(ib,ie)
+      do ib = 1, NEBLK
+        do ie = 1, LEBLK
+          if (ib.eq.1.and.ie.eq.1)write(0,*)omp_is_initial_device()
+          call d%grid(1)%elemblk(ib)%diffusion%part2(d%grid(1)%elemblk(ib)%diffusion,      &
+                        d%grid(1)%elemblk(ib)%esblk-1+ie,d%grid(1)%elemblk(ib)%esblk-1+ie  )
+        enddo
+      enddo
+!$omp end target
+    end subroutine diffusion_driver
+end module mod_diffusion_driver
+
 program tbp
   use mod_neptune_model
+  use mod_diffusion_driver
   implicit none
   type (neptune_t), target   :: model
 !  integer, parameter         :: leblk = 32
 !  integer, parameter         :: neblk = 10
   integer                    :: ie,ib
+  logical, external :: omp_is_initial_device 
 !  allocate(model%domain%grid%elemblk(neblk))
   do ib = 1, NEBLK
-    model%domain%grid%elemblk(ib)%esblk = (ib-1)*LEBLK+1
-    model%domain%grid%elemblk(ib)%diffusion%elemblk => model%domain%grid%elemblk(ib)
+    model%domain%grid(1)%elemblk(ib)%esblk = (ib-1)*LEBLK+1
+    model%domain%grid(1)%elemblk(ib)%diffusion%elemblk => model%domain%grid(1)%elemblk(ib)
 !    allocate(model%domain%grid%elemblk(ib)%diffusion%rhs(LEBLK,64,6))
-    model%domain%grid%elemblk(ib)%diffusion%rhs(1:LEBLK,64,6) = 0.
+    model%domain%grid(1)%elemblk(ib)%diffusion%rhs(1:LEBLK,64,6) = 0.
   enddo
+  call diffusion_driver(model%domain)
+#if 0
 !$omp target if(.true.)
+!$omp teams distribute parallel do private(ib,ie)
   do ib = 1, NEBLK
     do ie = 1, LEBLK
-      call model%domain%grid%elemblk(ib)%diffusion%part2(model%domain%grid%elemblk(ib)%diffusion,ie,ie)
+if (ib.eq.1.and.ie.eq.1)write(0,*)omp_is_initial_device()
+      call model%domain%grid(1)%elemblk(ib)%diffusion%part2(model%domain%grid(1)%elemblk(ib)%diffusion,      &
+                    model%domain%grid(1)%elemblk(ib)%esblk-1+ie,model%domain%grid(1)%elemblk(ib)%esblk-1+ie  )
     enddo
   enddo
 !$omp end target
-  print*,model%domain%grid%elemblk(1)%diffusion%rhs(1,1,1)
+#endif
+  print*,model%domain%grid(1)%elemblk(1)%diffusion%rhs(1,1,1)
   print*
   print*,'  DONE  '
   print*
