@@ -12,9 +12,19 @@ contains
     es = (es_task-this%elemblk%esblk+1)
     ee = (ee_task-this%elemblk%esblk+1)
 write(0,*)omp_is_initial_device(),this%elemblk%esblk,es_task,es,ee
+    call x(this,es_task,ee_task)
     do m=1,6
       this%rhs(es:ee,:,m) =  this%rhs(es:ee,:,m) + 0.2
     enddo
   end procedure compute_diffusion_part2
+
+  subroutine x( this, es_task, ee_task )
+    implicit none
+    class (diffusion_t), intent(in)    :: this
+    integer                            :: es_task, ee_task
+    logical, external :: omp_is_initial_device
+!$omp declare target
+write(0,*)__LINE__,omp_is_initial_device(),this%elemblk%esblk,es_task
+  end subroutine x
 end submodule diffusion_submod
 
