@@ -1,26 +1,19 @@
-Script started on Wed Nov 11 14:04:05 2020
-[michalak@login5.summit ~/tbp-example]$ cat xxx.F90
-#define NEBLK 10
-#define LEBLK 32
-
-program tbp
-  implicit none
-  logical, external :: omp_is_initial_device 
-!$omp target if(.true.)
-  write(0,*)omp_is_initial_device()
-!$omp end target
-  stop
-end program tbp
-[michalak@login5.summit ~/tbp-example]$ xlf2008_r -qsmp=omp -qoffload -qtgtarch=auto  -qcuda  -Wx,-nvvm-compile-options=-opt=0 -o xxx.exe xxx.F90
-** tbp   === End of Compilation 1 ===
-1501-510  Compilation successful for file xxx.F90.
-
-VERS1.3: final close failed: Input/output error
-[michalak@login5.summit ~/tbp-example]$ 
-[michalak@login5.summit ~/tbp-example]$ xlf2008_r -qsmp=omp -qoffload -qtgtarch=auto -qcuda -Wx,-nvvm-compile-options=-opt=0 -o xxx.exe xxx.F90
-** tbp   === End of Compilation 1 ===
-1501-510  Compilation successful for file xxx.F90.
-[michalak@login5.summit ~/tbp-example]$ cat xxx.lsf
+Script started on Thu Dec 17 15:40:03 2020
+[michalak@login4.summit ~/tbp-example]$ tcsh
+[michalak@login4.summit ~/tbp-example]$ make clean
+/bin/rm -f *.o *.mod *.smod tbp.exe
+[michalak@login4.summit ~/tbp-example]$ make
+xlf2008_r -qsmp=omp -qoffload -qtgtarch=auto  -qcuda  -Wx,-nvvm-compile-options=-opt=0  -c tbp.F90
+** mod_domain   === End of Compilation 1 ===
+** mod_neptune_model   === End of Compilation 2 ===
+** mod_diffusion_driver   === End of Compilation 3 ===
+** tbp   === End of Compilation 4 ===
+1501-510  Compilation successful for file tbp.F90.
+xlf2008_r -qsmp=omp -qoffload -qtgtarch=auto  -qcuda  -Wx,-nvvm-compile-options=-opt=0  -c tbp_submod.F90
+** diffusion_submod   === End of Compilation 1 ===
+1501-510  Compilation successful for file tbp_submod.F90.
+xlf2008_r -qsmp=omp -qoffload -qtgtarch=auto  -qcuda  -Wx,-nvvm-compile-options=-opt=0 -o tbp.exe tbp.o tbp_submod.o
+[michalak@login4.summit ~/tbp-example]$ cat run.lsf
 #!/bin/bash
 # Begin LSF Directives
 #BSUB -P CSC454
@@ -33,23 +26,51 @@ VERS1.3: final close failed: Input/output error
 
 cd /ccs/home/michalak/tbp-example
 date
+#export XLSMPOPTS=target=mandatory
+#mpirun -n 1 nsys profile --force-overwrite true -o tbp-profile --stats=true ./tbp.exe >& runlog
+#mpirun -n 1 ./tbp.exe >& runlog
+echo running job
 
-jsrun -n1 -a1 -g1 ./xxx.exe >& runlog 
+jsrun -n1 -a1 -g1 ./tbp.exe >& runlog 
 
 echo done
 
-[michalak@login5.summit ~/tbp-example]$ bsub xxx.lsf
-Job <474215> is submitted to default queue <batch>.
-[michalak@login5.summit ~/tbp-example]$ bjobs
-JOBID   USER       STAT   SLOTS    QUEUE       START_TIME    FINISH_TIME   JOB_NAME                      
-474215  michalak   PEND      -     batch             -             -       jmtest                        
-[michalak@login5.summit ~/tbp-example]$ bjobs
-No unfinished job found
-[michalak@login5.summit ~/tbp-example]$ cat runlog
- F
+[michalak@login4.summit ~/tbp-example]$ bsub run.lsf
+Job <588616> is submitted to default queue <batch>.
+[michalak@login4.summit ~/tbp-example]$ tail runlog
+ calling diffusion_driver
+ entering target region
+1587-159 Missing Target for offloading after successful target offloading.  The program will stop.
+
+[michalak@login4.summit ~/tbp-example]$ make clean
+/bin/rm -f *.o *.mod *.smod tbp.exe
+[michalak@login4.summit ~/tbp-example]$ make WORKAROUND=-DWORKAROUND
+xlf2008_r -qsmp=omp -qoffload -qtgtarch=auto  -qcuda  -Wx,-nvvm-compile-options=-opt=0 -DWORKAROUND -c tbp.F90
+** mod_domain   === End of Compilation 1 ===
+** mod_neptune_model   === End of Compilation 2 ===
+** mod_diffusion_driver   === End of Compilation 3 ===
+** tbp   === End of Compilation 4 ===
+1501-510  Compilation successful for file tbp.F90.
+xlf2008_r -qsmp=omp -qoffload -qtgtarch=auto  -qcuda  -Wx,-nvvm-compile-options=-opt=0 -DWORKAROUND -c tbp_submod.F90
+** diffusion_submod   === End of Compilation 1 ===
+1501-510  Compilation successful for file tbp_submod.F90.
+xlf2008_r -qsmp=omp -qoffload -qtgtarch=auto  -qcuda  -Wx,-nvvm-compile-options=-opt=0 -o tbp.exe tbp.o tbp_submod.o
+[michalak@login4.summit ~/tbp-example]$ bsub run.lsf
+Job <588629> is submitted to default queue <batch>.
+[michalak@login4.summit ~/tbp-example]$ tail runlog
+ 43 F 193 224
+ 43 F 1 32
+ back from target region
+ back from diffusion_driver
+ 0.200000002980232239
+ 
+   DONE  
+ 
 STOP
 (INEXACT)
-[michalak@login5.summit ~/tbp-example]$ exit
+[michalak@login4.summit ~/tbp-example]$ exit
+exit
+[michalak@login4.summit ~/tbp-example]$ exit
 exit
 
-Script done on Wed Nov 11 14:26:23 2020
+Script done on Thu Dec 17 15:47:01 2020

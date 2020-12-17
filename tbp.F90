@@ -25,7 +25,24 @@ module mod_domain
       class (diffusion_t), target, intent(inout)    :: this
       integer,                     intent(in)       :: es_task, ee_task
     end subroutine compute_diffusion_part2
+#ifdef WORKAROUND
+    module subroutine y ( this, es_task, ee_task )
+      class (diffusion_t), target, intent(inout)    :: this
+      integer,                     intent(in)       :: es_task, ee_task
+    end subroutine y
+#endif
   end interface
+#ifdef WORKAROUND
+contains
+  module procedure y !( this, es_task, ee_task )
+    implicit none
+    !class (diffusion_t), intent(in)    :: this
+    !integer                            :: es_task, ee_task
+    logical, external :: omp_is_initial_device
+!$omp declare target
+write(0,*)__LINE__,omp_is_initial_device(),this%elemblk%esblk,es_task
+  end procedure y
+#endif
 end module mod_domain
 
 module mod_neptune_model
