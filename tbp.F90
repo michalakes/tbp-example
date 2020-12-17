@@ -45,6 +45,7 @@ module mod_diffusion_driver
       type(domain_t), target, intent(inout) :: d
       integer                    :: ie,ib
       logical, external :: omp_is_initial_device 
+print*,'entering target region'
 !$omp target
 !$omp teams distribute parallel do private(ib,ie)
       do ib = 1, NEBLK
@@ -56,6 +57,7 @@ module mod_diffusion_driver
         enddo
       enddo
 !$omp end target
+print*,'back from target region'
     end subroutine diffusion_driver
 end module mod_diffusion_driver
 
@@ -72,7 +74,9 @@ program tbp
     model%domain%grid(1)%elemblk(ib)%diffusion%rhs(1:LEBLK,64,6) = 0.
   enddo
 
+  print*,'calling diffusion_driver'
   call diffusion_driver(model%domain)
+  print*,'back from diffusion_driver'
 
   print*,model%domain%grid(1)%elemblk(1)%diffusion%rhs(1,1,1)
   print*

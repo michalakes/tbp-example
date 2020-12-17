@@ -26,5 +26,6 @@ write(0,*)omp_is_initial_device(),this%elemblk%esblk,es_task,es,ee
 !$omp declare target
 write(0,*)__LINE__,omp_is_initial_device(),this%elemblk%esblk,es_task
   end subroutine x
+
 end submodule diffusion_submod
 
