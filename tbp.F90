@@ -17,7 +17,7 @@ module mod_domain
   end type elemblk_t
   type grid_t
     integer :: grid_id   ! identifier for this grid, global domain is grid 1
-    type(elemblk_t)    :: elemblk(NEBLK)
+    type(elemblk_t), allocatable    :: elemblk(:)
   end type grid_t
   type domain_t
     type( grid_t ) :: grid(1)
@@ -71,6 +71,7 @@ program tbp
   type (neptune_t), target   :: model
   integer                    :: ie,ib
   logical, external :: omp_is_initial_device 
+  allocate(model%domain%grid(1)%elemblk(NEBLK))
   do ib = 1, NEBLK
     model%domain%grid(1)%elemblk(ib)%ib    = ib
     model%domain%grid(1)%elemblk(ib)%esblk = (ib-1)*LEBLK+1
@@ -98,6 +99,9 @@ program tbp
   write(0,*)'back from diffusion_driver'
 !$omp target update from(model%domain)
   write(0,*)'back from update'
+  do ib = 1, NEBLK
+!$omp target update from(model%domain%grid(1)%elemblk(ib)%diffusion%rhs)
+  enddo
 #if 1
 !$omp target exit data map(from:model%domain)
 
