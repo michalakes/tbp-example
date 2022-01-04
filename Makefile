@@ -8,16 +8,21 @@
 # ifx -qopenmp -fopenmp-targets=spir64 matmul_offload.f90
 # to run: export OMP_TARGET_OFFLOAD=MANDATORY
 #
+
+LEBLK = 32
+NEBLK = 10
+
+
 FC = ifx -g -traceback
 FC = ifx -qopenmp -fopenmp-targets=spir64 -g -traceback
 
 all : tbp.exe
 
 tbp_submod.o : tbp.o tbp_submod.F90
-	$(FC) $(WORKAROUND) -c tbp_submod.F90
+	$(FC) $(WORKAROUND) -c -DLEBLK=$(LEBLK) -DNEBLK=$(NEBLK) tbp_submod.F90
 
 tbp.o : tbp.F90
-	$(FC) $(WORKAROUND) -c tbp.F90
+	$(FC) $(WORKAROUND) -c -DLEBLK=$(LEBLK) -DNEBLK=$(NEBLK) tbp.F90
 
 tbp.exe : tbp_submod.o
 	$(FC) -o tbp.exe tbp.o tbp_submod.o

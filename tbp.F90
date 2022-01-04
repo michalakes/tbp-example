@@ -1,5 +1,5 @@
-#define NEBLK 10
-#define LEBLK 32
+!#define NEBLK 10
+!#define LEBLK 32
 
 module mod_domain
   implicit none

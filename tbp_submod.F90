@@ -9,13 +9,15 @@ contains
     !integer              intent(in)    :: es_task, ee_task
     ! local
     integer :: m, es,ee
+    double precision, dimension(LEBLK)  :: rhs_loc
     !logical, external :: omp_is_initial_device
     ! Executable
     es =  (es_task-this%elemblk%esblk+1)
     ee =  (ee_task-this%elemblk%esblk+1)
 !    call x(this,es_task,ee_task)
     do m=1,1
-      this%rhs(es:ee,1,m) =  ee + 10000*es + 10000000*ib ! this%rhs(es:ee,1,m) + 0.2
+       rhs_loc(es:ee) = ee + 10000*es + 10000000*ib
+      this%rhs(es:ee,1,m) =  rhs_loc(es:ee) ! ee + 10000*es + 10000000*ib ! this%rhs(es:ee,1,m) + 0.2
     enddo
   end procedure compute_diffusion_part2
 
